@@ -1,6 +1,6 @@
 # LegVmc
 
-No description provided
+virtual model control & Forward Inverse Kinematics for Five-link suspension wheelleg
 
 ## Required Hardware
 None
