@@ -4,7 +4,7 @@
 /* === MODULE MANIFEST V2 ===
 module_description: 轮腿机器人五连杆解算
 constructor_args:
-    leg1_:
+    param:
       leg_4: 0.25
       leg_1: 0.25
       leg_3: 0.215
