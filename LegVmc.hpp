@@ -63,7 +63,7 @@ class LegVmc : public LibXR::Application {
    * @param sample_freq 采样频率
    */
   LegVmc(LibXR::HardwareContainer& hw, LibXR::ApplicationManager& app,
-      Param& param)
+      const Param& param)
     : param_(param)
       {
     UNUSED(hw);
