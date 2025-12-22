@@ -1,16 +1,20 @@
 #pragma once
 
 // clang-format off
-  /*   调用模块MANIFEST示例
-  - leg1_:
+/* === MODULE MANIFEST V2 ===
+module_description: 轮腿机器人五连杆解算
+constructor_args:
+    - leg1_:
       leg_4: 0.25
       leg_1: 0.25
       leg_3: 0.215
       leg_2: 0.215
       hip_length: 0.00001
-  */
+template_args: []
+required_hardware: []
+depends: []
+=== END MANIFEST === */
 // clang-format on
-
 
 #pragma once
 
