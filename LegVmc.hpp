@@ -1,14 +1,19 @@
 #pragma once
 
 // clang-format off
-  /*   调用模块MANIFEST示例
-  - leg1_:
+/* === MODULE MANIFEST V2 ===
+module_description: 轮腿机器人五连杆解算
+constructor_args:
+    param:
       leg_4: 0.25
       leg_1: 0.25
       leg_3: 0.215
       leg_2: 0.215
       hip_length: 0.00001
-  */
+template_args: []
+required_hardware: []
+depends: []
+=== END MANIFEST === */
 // clang-format on
 
 
@@ -29,13 +34,13 @@ class LegVmc : public LibXR::Application {
   } Param;
 
   struct VMCFeedback {
-    float L0 = 0.0f;          // 虚拟腿长度
-    float d_L0 = 0.0f;        // 虚拟腿长度变化率
-    float theta = 0.0f;       // 虚拟腿摆角
-    float d_theta = 0.0f;     // 虚拟腿摆角变化率
-    float F = 0.0f;           // 虚拟腿支持力
-    float Tp = 0.0f;          // 虚拟腿转矩
-    float Fn = 0.0f;          // 大地支持力
+    float L0 = 0.0f;                     // 虚拟腿长度
+    float d_L0 = 0.0f;                   // 虚拟腿长度变化率
+    float theta = 0.0f;                  // 虚拟腿摆角
+    float d_theta = 0.0f;                // 虚拟腿摆角变化率
+    float F = 0.0f;                      // 虚拟腿支持力
+    float Tp = 0.0f;                     // 虚拟腿转矩
+    float Fn = 0.0f;                     // 大地支持力
     float torque_set[2] = {0.0f, 0.0f};  // 输出力矩
     float spring_angle = 0.0f; // 弹簧与推力夹角
     float spring_force = 0.0f; // 弹簧沿phi0方向推力
@@ -49,16 +54,13 @@ class LegVmc : public LibXR::Application {
    * @param sample_freq 采样频率
    */
   LegVmc(LibXR::HardwareContainer& hw, LibXR::ApplicationManager& app,
-      Param& param)
-    : param_(param)
-      {
+         const Param& param)
+      : param_(param) {
     UNUSED(hw);
     UNUSED(app);
 
     this->Reset();
   }
-
-
 
   /**
    * @brief 获取VMC反馈数据
@@ -66,25 +68,23 @@ class LegVmc : public LibXR::Application {
    */
   const VMCFeedback& GetFeedback() const { return feedback_; }
 
-
-
   /**
    * @brief 监控函数（继承自Application）
    */
   void OnMonitor() override {}
 
-
-
-/* 正负极参考韭菜的菜 知乎 平衡步兵控制系统设计
- VMC 机体pitch正负极 d_pitch同 交龙pit反着来
+  /* 正负极参考韭菜的菜 知乎 平衡步兵控制系统设计
+   VMC 机体pitch正负极 d_pitch同 交龙pit反着来
+            /
+           /  正+
           /
-         /  正+
-        /
-x  ---------> 0
-        \	负-
-         \
-          \
- phi角正负极  d_phi同
+  x  ---------> 0
+          \	负-
+           \
+            \
+   phi角正负极  d_phi同
+            /
+           /  正+
           /
          /  正+
         /
@@ -368,5 +368,4 @@ private:
     float n_length,n_angle,x_length,force_angle,spring_torque;
 
   } vmc_leg_;
-
 };
