@@ -18,7 +18,6 @@ depends: []
 
 #include <algorithm>
 #include <cmath>
-#include <math.h>
 #include <tuple>
 
 class LegVmc : public LibXR::Application {
@@ -266,7 +265,7 @@ x  ---------> 0
     vmc_leg_.Fn =
         vmc_leg_.F * cosf(theta) + vmc_leg_.Tp * sinf(theta) / vmc_leg_.L0;
 
-    if (isnan(vmc_leg_.Fn)) {
+    if (__constexpr_isnan(vmc_leg_.Fn)) {
       vmc_leg_.Fn = vmc_leg_.last_Fn;
     }
     vmc_leg_.Fn = LowpassFilter(vmc_leg_.Fn, 10.0f, dt);
