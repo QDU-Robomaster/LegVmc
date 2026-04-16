@@ -18,6 +18,7 @@ depends: []
 
 #include <algorithm>
 #include <cmath>
+#include <math.h>
 #include <tuple>
 
 class LegVmc : public LibXR::Application {
