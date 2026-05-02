@@ -20,6 +20,8 @@ depends: []
 #include <cmath>
 #include <tuple>
 
+#include "app_framework.hpp"
+
 class LegVmc : public LibXR::Application {
  public:
   typedef struct {
