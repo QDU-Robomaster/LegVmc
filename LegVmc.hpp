@@ -42,7 +42,8 @@ class LegVmc
    * @param param VMC参数
    * @param sample_freq 采样频率
    */
-  LegVmc(const Param& param) : param_(param) { this->Reset(); }
+  LegVmc(
+      const Param& param = {.leg_4 = 0.25, .leg_1 = 0.25, .leg_3 = 0.215, .leg_2 = 0.215, .hip_length = 1e-05}) : param_(param) { this->Reset(); }
 
   /**
    * @brief 获取VMC反馈数据
