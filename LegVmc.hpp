@@ -51,11 +51,6 @@ class LegVmc
    */
   const VMCFeedback& GetFeedback() const { return feedback_; }
 
-  /**
-   * @brief 监控函数（继承自Application）
-   */
-  void OnMonitor() {}
-
   /* 正负极参考韭菜的菜 知乎 平衡步兵控制系统设计
    VMC 机体pitch正负极 d_pitch同 交龙pit反着来
             /

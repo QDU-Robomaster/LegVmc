@@ -19,7 +19,6 @@ Manifest 描述：轮腿机器人五连杆解算
 1. GetFeedback: 输出当前 VMC 解算结果。
 2. LqrKCalc / Lqr2KCalc: 增益计算工具函数。
 3. Reset: 重置内部状态。
-4. OnMonitor: 监控钩子（当前为空实现）。
 
 ## 3. 接入步骤
 1. 添加模块并配置连杆参数。
