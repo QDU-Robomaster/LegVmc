@@ -11,43 +11,64 @@ depends: []
 #include <cmath>
 #include <tuple>
 
+/**
+ * @brief 轮腿机器人五连杆腿的虚拟模型控制（VMC）解算类。
+ *        Virtual model control (VMC) solver class for the five-bar leg of a
+ *        wheel-legged robot.
+ */
 class LegVmc
 {
  public:
+  /**
+   * @brief 连杆尺寸参数，单位 m。
+   *        Link dimension parameters in m.
+   */
   typedef struct
   {
-    float leg_4;      /*前大腿*/
-    float leg_1;      /*后大腿*/
-    float leg_3;      /*前小腿*/
-    float leg_2;      /*后小腿*/
-    float hip_length; /*髋长度*/
+    float leg_4;       ///< 前大腿长度 Front thigh length
+    float leg_1;       ///< 后大腿长度 Back thigh length
+    float leg_3;       ///< 前小腿长度 Front shank length
+    float leg_2;       ///< 后小腿长度 Back shank length
+    float hip_length;  ///< 两个髋关节之间的距离 Distance between the two hip joints
   } Param;
 
+  /**
+   * @brief VMC 反馈数据。
+   *        VMC feedback data.
+   */
   struct VMCFeedback
   {
-    float L0 = 0.0f;                     // 虚拟腿长度
-    float d_L0 = 0.0f;                   // 虚拟腿长度变化率
-    float theta = 0.0f;                  // 虚拟腿摆角
-    float d_theta = 0.0f;                // 虚拟腿摆角变化率
-    float F = 0.0f;                      // 虚拟腿支持力
-    float Tp = 0.0f;                     // 虚拟腿转矩
-    float Fn = 0.0f;                     // 大地支持力
-    float torque_set[2] = {0.0f, 0.0f};  // 输出力矩
-    float spring_angle = 0.0f;           // 弹簧与推力夹角
-    float spring_force = 0.0f;           // 弹簧沿phi0方向推力
+    float L0 = 0.0f;       ///< 虚拟腿长度 (m) Virtual leg length (m)
+    float d_L0 = 0.0f;     ///< 虚拟腿长度变化率 (m/s) Virtual leg length rate (m/s)
+    float theta = 0.0f;    ///< 虚拟腿摆角 (rad) Virtual leg swing angle (rad)
+    float d_theta = 0.0f;  ///< 虚拟腿摆角变化率 (rad/s)
+                           ///< Virtual leg swing angular velocity (rad/s)
+    float F = 0.0f;        ///< 虚拟腿推力 (N) Virtual leg thrust (N)
+    float Tp = 0.0f;       ///< 虚拟腿摆力矩 (N·m) Virtual leg swing torque (N·m)
+    float Fn = 0.0f;       ///< 地面支持力 (N) Ground support force (N)
+    float torque_set[2] = {0.0f, 0.0f};  ///< 两个关节的输出力矩 (N·m)
+                                         ///< Output torques of the two joints (N·m)
+    float spring_angle = 0.0f;           ///< 弹簧与推力夹角 Spring-to-thrust angle
+    float spring_force = 0.0f;           ///< 弹簧沿 phi0 方向的推力 (N)
+                                         ///< Spring thrust along phi0 (N)
   };
 
   /**
-   * @brief VMC 的构造函数
-   * @param param VMC参数
-   * @param sample_freq 采样频率
+   * @brief 构造 LegVmc 并复位内部状态。
+   *        Construct LegVmc and reset the internal state.
+   *
+   * @param param 连杆尺寸参数。
+   *              Link dimension parameters.
    */
   LegVmc(
       const Param& param = {.leg_4 = 0.25, .leg_1 = 0.25, .leg_3 = 0.215, .leg_2 = 0.215, .hip_length = 1e-05}) : param_(param) { this->Reset(); }
 
   /**
-   * @brief 获取VMC反馈数据
-   * @return const VMCFeedback& 反馈数据
+   * @brief 获取 VMC 反馈数据。
+   *        Get the VMC feedback data.
+   *
+   * @return 反馈数据的引用。
+   *         Reference to the feedback data.
    */
   const VMCFeedback& GetFeedback() const { return feedback_; }
 
@@ -78,8 +99,31 @@ x  ---------> 0
             OO
 */
 
-  /* 两个大腿角度 机体角度 角速度  求出虚拟腿摆角 摆角速度  虚拟腿长
-   * 虚拟腿长变化速度 */
+  /**
+   * @brief 正解：由两个大腿角度、机体 pitch 与关节角速度求虚拟腿长、腿长变化率、
+   *        摆角和摆角速度，并更新反馈。
+   *        Forward solution: compute the virtual leg length, its rate, the swing
+   *        angle and the swing angular velocity from the two thigh angles, the body
+   *        pitch and the joint angular velocities, and update the feedback.
+   *
+   * @param phi1 后大腿角度 (rad)。
+   *             Back thigh angle (rad).
+   * @param phi4 前大腿角度 (rad)。
+   *             Front thigh angle (rad).
+   * @param eulrPit 机体 pitch (rad)。
+   *                Body pitch (rad).
+   * @param d_eulrPit 机体 pitch 角速度 (rad/s)。
+   *                  Body pitch angular velocity (rad/s).
+   * @param omega1 后关节角速度 (rad/s)。
+   *               Back joint angular velocity (rad/s).
+   * @param omega4 前关节角速度 (rad/s)。
+   *               Front joint angular velocity (rad/s).
+   * @param dt 控制周期 (s)，保留参数。
+   *           Control period (s), a reserved parameter.
+   * @return `{L0, d_L0, theta, d_theta}`：虚拟腿长、腿长变化率、摆角、摆角速度。
+   *         `{L0, d_L0, theta, d_theta}`: virtual leg length, leg length rate, swing
+   *         angle and swing angular velocity.
+   */
   std::tuple<float, float, float, float> VMCsolve(float phi1, float phi4, float eulrPit,
                                                   float d_eulrPit, float omega1,
                                                   float omega4, float dt)
@@ -171,13 +215,40 @@ x  ---------> 0
 
     return std::make_tuple(vmc_leg_.L0, vmc_leg_.d_L0, vmc_leg_.theta, vmc_leg_.d_theta);
   }
+  /**
+   * @brief 按内置的弹簧几何与刚度常数计算弹簧沿腿方向的推力。
+   *        Compute the spring thrust along the leg from the built-in spring geometry
+   *        and stiffness constants.
+   *
+   * @return 弹簧推力 (N)。
+   *         Spring thrust (N).
+   */
   float GetSpringForce()
   {
     /* 弹簧力计算 */
     feedback_.spring_force = 2.0f * vmc_leg_.spring_torque * vmc_leg_.force_angle;
     return feedback_.spring_force;
   }
-  /* 两个大腿角度 期望腿支持力 期望腿摆力矩 求出两个关节输出力矩 */
+  /**
+   * @brief 逆解：由期望的腿推力和摆力矩求两个关节的输出力矩，使用最近一次
+   *        `VMCsolve()` 的几何量。
+   *        Inverse solution: compute the output torques of the two joints from the
+   *        desired leg thrust and swing torque, using the geometry of the latest
+   *        `VMCsolve()`.
+   *
+   * @param phi1 后大腿角度 (rad)。
+   *             Back thigh angle (rad).
+   * @param phi4 前大腿角度 (rad)。
+   *             Front thigh angle (rad).
+   * @param Tp 期望的虚拟腿摆力矩 (N·m)。
+   *           Desired virtual leg swing torque (N·m).
+   * @param F0 期望的沿腿推力 (N)。
+   *           Desired thrust along the leg (N).
+   * @return `{torque_set[0], torque_set[1]}`：`phi1`、`phi4` 对应关节的输出力矩
+   *         (N·m)。
+   *         `{torque_set[0], torque_set[1]}`: output torques of the joints of `phi1`
+   *         and `phi4` (N·m).
+   */
   std::tuple<float, float> VMCinserve(float phi1, float phi4, float Tp, float F0)
   {
     /*jacobian矩阵计算*/
@@ -208,13 +279,45 @@ x  ---------> 0
 
     return std::make_tuple(this->vmc_leg_.torque_set[0], this->vmc_leg_.torque_set[1]);
   }
+  /**
+   * @brief 按当前雅可比矩阵计算给定关节力矩对应的推力。
+   *        Compute the thrust corresponding to a given joint torque from the
+   *        current Jacobian.
+   *
+   * @param target_tor 关节力矩 (N·m)。
+   *                   Joint torque (N·m).
+   * @return 推力 (N)。
+   *         Thrust (N).
+   */
   float MaxFnSolve(float target_tor)
   {
     return (-vmc_leg_.j22 * target_tor - vmc_leg_.j12 * target_tor) /
            (vmc_leg_.j11 * vmc_leg_.j22 - vmc_leg_.j12 * vmc_leg_.j21);
   }
 
-  /* 用到了前两个函数解算算出来的变量 尽量放在前两个函数之后 */
+  /**
+   * @brief 由关节反馈力矩估计虚拟腿推力、摆力矩和地面支持力，结果经 10 Hz 二阶低通
+   *        滤波。使用 `VMCsolve()` 与 `VMCinserve()` 的中间量，在二者之后调用。
+   *        Estimate the virtual leg thrust, the swing torque and the ground support
+   *        force from the joint feedback torques, with the result passed through a
+   *        10 Hz second-order low-pass filter. It uses intermediate values of
+   *        `VMCsolve()` and `VMCinserve()` and is called after both.
+   *
+   * @param T1 `phi1` 对应关节的反馈力矩 (N·m)。
+   *           Feedback torque of the joint of `phi1` (N·m).
+   * @param T2 `phi4` 对应关节的反馈力矩 (N·m)。
+   *           Feedback torque of the joint of `phi4` (N·m).
+   * @param imu_accl_z 机体 z 向加速度，保留参数。
+   *                   Body z acceleration, a reserved parameter.
+   * @param theta 虚拟腿摆角 (rad)。
+   *              Virtual leg swing angle (rad).
+   * @param d_theta 虚拟腿摆角速度 (rad/s)，保留参数。
+   *                Virtual leg swing angular velocity (rad/s), a reserved parameter.
+   * @param dt 滤波周期 (s)。
+   *           Filter period (s).
+   * @return 滤波后的地面支持力 (N)。
+   *         Filtered ground support force (N).
+   */
   float GndDetector(float T1, float T2, float imu_accl_z, float theta, float d_theta,
                     float dt)
   {
@@ -240,18 +343,59 @@ x  ---------> 0
     return vmc_leg_.Fn;
   }
 
-  /* 计算拟合函数结果 单变量 */
+  /**
+   * @brief 计算单变量三次拟合多项式 `coe[0]·len³ + coe[1]·len² + coe[2]·len + coe[3]`。
+   *        Evaluate the cubic fitting polynomial in one variable
+   *        `coe[0]·len³ + coe[1]·len² + coe[2]·len + coe[3]`.
+   *
+   * @param coe 4 个多项式系数。
+   *            Four polynomial coefficients.
+   * @param len 腿长 (m)。
+   *            Leg length (m).
+   * @return 多项式的值。
+   *         Value of the polynomial.
+   */
   float LqrKCalc(float* coe, float len)
   {
     return coe[0] * len * len * len + coe[1] * len * len + coe[2] * len + coe[3];
   }
 
-  /* 计算拟合函数结果 双变量 */
+  /**
+   * @brief 计算双变量二次拟合多项式
+   *        `coe[0] + coe[1]·len1 + coe[2]·len2 + coe[3]·len1² + coe[4]·len1·len2 +
+   *        coe[5]·len2²`。
+   *        Evaluate the quadratic fitting polynomial in two variables
+   *        `coe[0] + coe[1]·len1 + coe[2]·len2 + coe[3]·len1² + coe[4]·len1·len2 +
+   *        coe[5]·len2²`.
+   *
+   * @param coe 6 个多项式系数。
+   *            Six polynomial coefficients.
+   * @param len1 第一条腿的腿长 (m)。
+   *             Leg length of the first leg (m).
+   * @param len2 第二条腿的腿长 (m)。
+   *             Leg length of the second leg (m).
+   * @return 多项式的值。
+   *         Value of the polynomial.
+   */
   float Lqr2KCalc(float* coe, float len1, float len2)
   {
     return (coe[0] + coe[1] * len1 + coe[2] * len2 + coe[3] * len1 * len1 +
             coe[4] * len1 * len2 + coe[5] * len2 * len2);
   }
+  /**
+   * @brief 二阶低通滤波，与 `GndDetector()` 共用同一组滤波状态。
+   *        Second-order low-pass filter that shares its filter state with
+   *        `GndDetector()`.
+   *
+   * @param sample 输入采样值。
+   *               Input sample.
+   * @param cut_freq 截止频率 (Hz)。
+   *                 Cut-off frequency (Hz).
+   * @param dt 采样周期 (s)。
+   *           Sampling period (s).
+   * @return 滤波输出。
+   *         Filter output.
+   */
   float LowpassFilter(float sample, float cut_freq, float dt)
   {
     float k = cut_freq * 3.14159265f * dt;
@@ -271,7 +415,10 @@ x  ---------> 0
     return out;
   }
 
-  /* 变量刷新 */
+  /**
+   * @brief 清零内部几何量、滤波状态和反馈。
+   *        Clear the internal geometry, the filter state and the feedback.
+   */
   void Reset()
   {
     vmc_leg_.L0 = 0;
