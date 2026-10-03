@@ -60,8 +60,15 @@ class LegVmc
    * @param param 连杆尺寸参数。
    *              Link dimension parameters.
    */
-  LegVmc(
-      const Param& param = {.leg_4 = 0.25, .leg_1 = 0.25, .leg_3 = 0.215, .leg_2 = 0.215, .hip_length = 1e-05}) : param_(param) { this->Reset(); }
+  LegVmc(const Param& param = {.leg_4 = 0.25,
+                               .leg_1 = 0.25,
+                               .leg_3 = 0.215,
+                               .leg_2 = 0.215,
+                               .hip_length = 1e-05})
+      : param_(param)
+  {
+    this->Reset();
+  }
 
   /**
    * @brief 获取 VMC 反馈数据。
