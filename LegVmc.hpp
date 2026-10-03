@@ -9,6 +9,7 @@ depends: []
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <tuple>
 
 /**
@@ -189,7 +190,7 @@ x  ---------> 0
     float k_spring = -0.5f * vmc_leg_.L0 + 1.3f;
     k_spring = std::clamp(k_spring, 1.0f, 1.5f);
     vmc_leg_.spring_torque = 475.0f * vmc_leg_.x_length / 0.25f;
-    vmc_leg_.force_angle = sinf(M_PI_2 + vmc_leg_.phi2 - vmc_leg_.phi0);
+    vmc_leg_.force_angle = sinf(std::numbers::pi / 2 + vmc_leg_.phi2 - vmc_leg_.phi0);
 
     this->vmc_leg_.alpha = 1.571f - this->vmc_leg_.phi0;
 
