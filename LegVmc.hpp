@@ -2,7 +2,7 @@
 
 // clang-format off
 /* === MODULE MANIFEST V2 ===
-module_description: 轮腿机器人五连杆解算
+module_description: 轮腿机器人五连杆腿的虚拟模型控制（VMC）解算模块 / Virtual model control (VMC) solver Module for the five-bar legs of a wheel-legged robot
 depends: []
 === END MANIFEST === */
 // clang-format on
@@ -51,8 +51,7 @@ class LegVmc
    */
   const VMCFeedback& GetFeedback() const { return feedback_; }
 
-  /* 正负极参考韭菜的菜 知乎 平衡步兵控制系统设计
-   VMC 机体pitch正负极 d_pitch同 交龙pit反着来
+  /* 符号约定：机体 pitch 及其角速度的正负方向如下
             /
            /  正+
           /
@@ -60,7 +59,7 @@ class LegVmc
           \	负-
            \
             \
-   phi角正负极  d_phi同
+   phi 角及其角速度的正负方向如下
             /
            /  正+
           /
@@ -128,7 +127,7 @@ x  ---------> 0
                               this->vmc_leg_.YC * this->vmc_leg_.YC);
     this->vmc_leg_.phi0 =
         atan2f(this->vmc_leg_.YC, (this->vmc_leg_.XC - this->param_.hip_length / 2.0f));
-    /* 此处magicnum来自于手撕四连杆力学 */
+    /* 以下常数由弹簧连杆的受力推导得到 */
     vmc_leg_.n_angle = (3.1415926f - phi1 + vmc_leg_.phi2) - 0.21467f;
     vmc_leg_.n_length = sqrtf(0.043304f - 0.0202f * cosf(vmc_leg_.n_angle));
 
@@ -160,7 +159,7 @@ x  ---------> 0
                 this->param_.leg_2 * sinf(this->vmc_leg_.phi2) * d_phi2;
     float dYC = this->param_.leg_1 * cosf(phi1) * omega1 +
                 this->param_.leg_2 * cosf(this->vmc_leg_.phi2) * d_phi2;
-    /* 腿长变化速度得出于雅可比 效果没有角速度反馈几何计算好 */
+    /* 腿长变化率：对 C 点坐标求导得到 */
     this->vmc_leg_.d_L0 = ((this->vmc_leg_.XC - this->param_.hip_length / 2.0f) * dXC +
                            this->vmc_leg_.YC * dYC) /
                           this->vmc_leg_.L0;
@@ -225,13 +224,6 @@ x  ---------> 0
     vmc_leg_.Tp = (-vmc_leg_.j21 * T1 + vmc_leg_.j11 * T2) /
                   (vmc_leg_.j11 * vmc_leg_.j22 - vmc_leg_.j12 * vmc_leg_.j21);
 
-    /* 角速度变化和腿长变化乘积太大了 有点失真*/
-    // vmc_leg_.Fn =LowpassFilter(std::clamp(vmc_leg_.F * cosf(theta) +
-    // vmc_leg_.Tp * sinf(theta) / vmc_leg_.L0 +
-    //              5.0f +  (imu_accl_z * 9.8f  + 2.0f * vmc_leg_.d_L0 * d_theta
-    //              * sinf(theta) +
-    //                     vmc_leg_.L0 * d_theta * d_theta *
-    //                     cosf(theta)),-200.0f,200.0f),100.0f,dt);
     vmc_leg_.Fn = vmc_leg_.F * cosf(theta) + vmc_leg_.Tp * sinf(theta) / vmc_leg_.L0;
 
     if (std::isnan(vmc_leg_.Fn))
@@ -260,7 +252,6 @@ x  ---------> 0
     return (coe[0] + coe[1] * len1 + coe[2] * len2 + coe[3] * len1 * len1 +
             coe[4] * len1 * len2 + coe[5] * len2 * len2);
   }
-  /*偷偷塞一个低通滤波应该没人会管我*/
   float LowpassFilter(float sample, float cut_freq, float dt)
   {
     float k = cut_freq * 3.14159265f * dt;
