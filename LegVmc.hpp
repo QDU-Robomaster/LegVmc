@@ -3,6 +3,7 @@
 // clang-format off
 /* === MODULE MANIFEST V2 ===
 module_description: 轮腿机器人五连杆腿的虚拟模型控制（VMC）解算模块 / Virtual model control (VMC) solver Module for the five-bar legs of a wheel-legged robot
+standalone: false
 depends: []
 === END MANIFEST === */
 // clang-format on
