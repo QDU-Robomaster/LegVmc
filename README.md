@@ -4,7 +4,7 @@
 
 ## 1. 模块作用 / Purpose
 
-LegVmc 是计算类，在调用方调用成员函数时计算。它把两个髋关节角度换算成虚拟腿的长度和摆角（正解），把期望的虚拟腿推力和摆力矩换算成两个关节力矩（逆解），并由关节力矩估计地面支持力。角度单位 rad，长度单位 m，力单位 N，力矩单位 N·m。
+LegVmc 是库型模块（`standalone: false`），提供一个计算类，在调用方调用成员函数时计算。它把两个髋关节角度换算成虚拟腿的长度和摆角（正解），把期望的虚拟腿推力和摆力矩换算成两个关节力矩（逆解），并由关节力矩估计地面支持力。角度单位 rad，长度单位 m，力单位 N，力矩单位 N·m。
 
 `QDU-Robomaster/Wheelleg` 通过 `depends` 引入本仓库，并在内部用自己的参数创建左右两条腿的 `LegVmc` 对象。
 
@@ -21,7 +21,7 @@ LegVmc 是计算类，在调用方调用成员函数时计算。它把两个髋�
 - `GetFeedback()`：返回 `VMCFeedback`（`L0`、`d_L0`、`theta`、`d_theta`、`F`、`Tp`、`Fn`、`torque_set[2]`、`spring_force` 等）。
 - `Reset()`：清零内部几何量、滤波状态和反馈。
 
-LegVmc is a computation class that computes when the caller invokes its member functions. It converts the two hip joint angles into the length and swing angle of the virtual leg (forward solution), converts the desired virtual leg thrust and swing torque into two joint torques (inverse solution), and estimates the ground support force from the joint torques. Angles are in rad, lengths in m, forces in N and torques in N·m.
+LegVmc is a library Module (`standalone: false`) that provides a computation class, which computes when the caller invokes its member functions. It converts the two hip joint angles into the length and swing angle of the virtual leg (forward solution), converts the desired virtual leg thrust and swing torque into two joint torques (inverse solution), and estimates the ground support force from the joint torques. Angles are in rad, lengths in m, forces in N and torques in N·m.
 
 `QDU-Robomaster/Wheelleg` pulls in this repository through `depends` and internally creates the `LegVmc` objects of the left and right legs with its own parameters.
 
@@ -71,21 +71,30 @@ Configuration parameters (`Param`, in m):
 
 ## 4. 配置示例 / Configuration Example
 
-`xrobot instance add QDU-Robomaster/LegVmc` 写入的实例，`param` 按实际连杆尺寸填写：
+LegVmc 是库，`xrobot instance add` 输出：
 
-An instance written by `xrobot instance add QDU-Robomaster/LegVmc`, with `param` set to the actual link dimensions:
+LegVmc is a library, and `xrobot instance add` prints:
 
-```yaml
-modules:
-  - module: QDU-Robomaster/LegVmc
-    id: legvmc_0
-    args:
-      - param:
-          leg_4: 0.25
-          leg_1: 0.25
-          leg_3: 0.215
-          leg_2: 0.215
-          hip_length: 1e-05
+```text
+$ xrobot instance add QDU-Robomaster/LegVmc
+QDU-Robomaster/LegVmc is a library (standalone: false) and cannot be instantiated
+```
+
+在 `User/xrobot.yaml` 中配置的是 `QDU-Robomaster/Wheelleg` 的实例，连杆尺寸写在它的 `vmc_left_param` 与 `vmc_right_param` 中，Wheelleg 构造时用这两组参数创建左右腿的 `LegVmc` 对象。C++ 中的典型用法：
+
+The instance configured in `User/xrobot.yaml` is that of `QDU-Robomaster/Wheelleg`. The link dimensions are set in its `vmc_left_param` and `vmc_right_param`, from which Wheelleg creates the `LegVmc` objects of the left and right legs on construction. Typical use in C++:
+
+```cpp
+LegVmc leg({.leg_4 = 0.21f, .leg_1 = 0.21f, .leg_3 = 0.25f, .leg_2 = 0.25f,
+            .hip_length = 0.0f});
+
+std::tuple<float, float> LegTorque(float phi1, float phi4, float pitch, float d_pitch,
+                                   float omega1, float omega4, float dt, float tp,
+                                   float f0)
+{
+  leg.VMCsolve(phi1, phi4, pitch, d_pitch, omega1, omega4, dt);
+  return leg.VMCinserve(phi1, phi4, tp, f0);
+}
 ```
 
 ## 5. 依赖与硬件 / Dependencies and Hardware
